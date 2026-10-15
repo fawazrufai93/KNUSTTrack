@@ -1,0 +1,17 @@
+{
+  "name": "knustrack-driver",
+  "version": "1.0.0",
+  "private": true,
+  "description": "KNUSTrack Driver - native iPhone wrapper with background location",
+  "scripts": {
+    "setup": "npm install && npx cap sync ios && npx cap open ios",
+    "sync": "cap sync ios",
+    "open": "cap open ios"
+  },
+  "dependencies": {
+    "@capacitor-community/background-geolocation": "^1.2.26",
+    "@capacitor/cli": "^7.6.9",
+    "@capacitor/core": "^7.6.9",
+    "@capacitor/ios": "^7.6.9"
+  }
+}

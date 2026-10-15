@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="KNUSTrack Driver">
+<meta name="theme-color" content="#10201A">
+<meta name="robots" content="noindex, nofollow">
+<title>KNUSTrack Driver</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ui.css">
+<script src="capacitor.js" onerror="void 0"></script>
+<style>
+  .hero{padding:22px;margin-top:6px}.hero h2{margin:0 0 6px;font:800 26px/1.1 var(--display);letter-spacing:-.02em}.hero p{margin:0 0 20px;color:var(--muted);font-size:14.5px;line-height:1.5}
+  .live{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+  .who{display:flex;align-items:center;gap:14px;margin-bottom:18px}.who .badge{width:60px;height:60px;border-radius:18px;font-size:24px}.who strong{display:block;font:800 21px/1.15 var(--display)}.who span{color:var(--muted);font-size:13.5px}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}.stat{padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--bg)}
+  .stat small{display:block;color:var(--muted);font-size:12px;font-weight:600;margin-bottom:4px}.stat b{font:800 22px var(--display);font-variant-numeric:tabular-nums}
+  .tip{display:flex;gap:10px;padding:12px 14px;border-radius:14px;background:#FFF3D1;color:#4A3500;font-size:13.5px;line-height:1.45;margin-bottom:16px}
+  .tip svg{width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-top:1px}
+  .warn{color:var(--red)!important}.ok{color:var(--green)!important}
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}.kpi{padding:12px 8px;border:1px solid var(--line);border-radius:14px;background:var(--bg);text-align:center}
+  .kpi small{display:block;color:var(--muted);font-size:11.5px;font-weight:600}.kpi b{display:block;margin-top:4px;font:800 24px/1 var(--display);font-variant-numeric:tabular-nums}
+  .dash h3{margin:18px 0 8px;font:800 16px var(--display)}.rv{padding:10px 0;border-top:1px solid var(--line);font-size:13.5px}.rv:first-child{border-top:0}.rv small{color:var(--muted);margin-left:6px}.rv p{margin:4px 0 0;line-height:1.4;overflow-wrap:anywhere}.rv .st{color:var(--amber);letter-spacing:1px}
+  .sched{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin-bottom:6px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#10201A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="3"/><path d="M3 11h18M7 17v2M17 17v2"/></svg></div><div><h1>KNUSTrack</h1><p>Driver</p></div></div>
+  <a class="btn sm" href="index.html">Student map</a>
+</header>
+
+<main class="wrap narrow">
+  <!-- Sign in -->
+  <section class="card hero" id="loginView">
+    <h2>Start your trip</h2>
+    <p>Choose your bus and enter its PIN. Students will see your bus moving on the map.</p>
+    <div class="err hidden" id="loginErr" role="alert"></div>
+    <label class="field"><span>Your bus</span><select id="busSelect"><option value="">Loading buses…</option></select></label>
+    <label class="field"><span>Bus PIN</span><input id="pinInput" class="pin" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"></label>
+    <button class="btn primary big block" id="startBtn">Start trip</button>
+  </section>
+
+  <!-- Trip -->
+  <section class="card hero hidden" id="tripView">
+    <div class="live"><span class="chip on" id="liveChip"><span class="dot"></span><span id="liveText">Starting GPS…</span></span><span class="chip" id="netChip">Online</span></div>
+    <div class="who"><div class="badge" id="busNum">-</div><div><strong id="busName">Bus</strong><span id="busSub"></span></div></div>
+    <div class="stats">
+      <div class="stat"><small>Speed</small><b id="speed">0 km/h</b></div>
+      <div class="stat"><small>GPS accuracy</small><b id="acc">-</b></div>
+      <div class="stat"><small>Last sent</small><b id="sent">-</b></div>
+      <div class="stat"><small>Screen</small><b id="wake">-</b></div>
+      <div class="stat" style="grid-column:1/-1"><small>Background tracking</small><b id="bg" style="font-size:17px">-</b></div>
+    </div>
+    <div class="tip"><svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg><span>Keep the phone charging and do not swipe this app away. You can lock the phone or switch apps: tracking carries on, and if iPhone pauses it, it resumes the moment you open the app again.</span></div>
+    <button class="btn solid-danger big block" id="endBtn">End trip</button>
+
+    <div class="dash">
+      <h3>My dashboard</h3>
+      <h3>How full is your bus?</h3>
+      <div id="crowdPick" style="display:flex;gap:8px;margin-bottom:14px">
+        <button type="button" data-c="1" class="chip">Plenty of seats</button>
+        <button type="button" data-c="2" class="chip">Filling up</button>
+        <button type="button" data-c="3" class="chip">Full</button>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><small>Trips</small><b id="kTrips">0</b></div>
+        <div class="kpi"><small>Late trips</small><b id="kLate">0</b></div>
+        <div class="kpi"><small>Late today</small><b id="kToday">0</b></div>
+        <div class="kpi"><small>On time</small><b id="kOnTime">-</b></div>
+        <div class="kpi"><small>Rating</small><b id="kRate">-</b></div>
+        <div class="kpi"><small>Reviews</small><b id="kRev">0</b></div>
+      </div>
+      <div class="sched" id="sched"></div>
+      <h3>What students say</h3>
+      <div id="revList"><p style="color:var(--muted);font-size:13.5px;margin:0">No comments yet.</p></div>
+    </div>
+
+  </section>
+</main>
+<div id="toast" role="status"></div>
+
+<script type="module">
+import { requireConfig, subscribeToShuttles, verifyDriverCredentials, updateShuttleLiveLocation, removeShuttleLiveLocation, subscribeToMyStats, subscribeToReviews, recordTrip, explainError, lateMinutes } from './firebase-config.js';
+if (!requireConfig()) throw new Error('Firebase is not configured');
+
+const $ = (id) => document.getElementById(id);
+const state = { crowd:0, shuttles:{}, sess:null, watch:null, wake:null, lastSent:0, stats:null, reviews:{}, fix:null, rejects:0, hb:null };
+/* Native iPhone app (Capacitor): real background location. In a normal browser these stay off and the web code below is used. */
+const CAP = window.capacitorExports;
+const NATIVE = !!(CAP && CAP.Capacitor && CAP.Capacitor.isNativePlatform && CAP.Capacitor.isNativePlatform());
+const BG = NATIVE ? CAP.registerPlugin('BackgroundGeolocation') : null;
+let nativeWatch = null, nativeBusy = false;
+if (NATIVE) { const l = document.querySelector('header a.btn'); if (l) l.style.display = 'none'; }
+const SEND_MS = 2000, HEARTBEAT_MS = 5000, MAX_ACC = 80, SESSION_HOURS = 12;
+const esc = (t) => String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const lab = (id) => String((state.shuttles[id] || {}).number || id.replace('shuttle-', ''));
+function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2600); }
+function loginError(m) { const e = $('loginErr'); e.textContent = m; e.classList.toggle('hidden', !m); }
+
+/* bus list */
+subscribeToShuttles(s => {
+  state.shuttles = s || {};
+  const sel = $('busSelect'), cur = sel.value || localStorage.getItem('kt_last_bus') || '';
+  const ids = Object.keys(state.shuttles).sort((a, b) => lab(a).localeCompare(lab(b), undefined, { numeric:true }));
+  sel.innerHTML = ids.length ? '<option value="">Select your bus</option>' : '<option value="">No buses registered yet</option>';
+  ids.forEach(id => { const o = document.createElement('option'); o.value = id; o.textContent = `Bus ${lab(id)} · ${state.shuttles[id].name || ''}`; sel.appendChild(o); });
+  if (cur && state.shuttles[cur]) sel.value = cur;
+  if (state.sess) showTripHeader();
+});
+
+/* sign in */
+$('startBtn').onclick = async () => {
+  const id = $('busSelect').value, pin = $('pinInput').value.trim();
+  loginError(''); keepAlive.start();
+  if (!id) return loginError('Choose your bus first.');
+  if (!/^\d{4}$/.test(pin)) return loginError('Enter the 4-digit PIN for your bus.');
+  if (!NATIVE && !navigator.geolocation) return loginError('This browser cannot share location. Open this page in Safari.');
+  $('startBtn').disabled = true; $('startBtn').textContent = 'Checking…';
+  const ok = await verifyDriverCredentials(id, pin);
+  $('startBtn').disabled = false; $('startBtn').textContent = 'Start trip';
+  if (!ok) return loginError('Wrong PIN for this bus, or no internet connection. Try again.');
+  try { localStorage.setItem('kt_last_bus', id); } catch (e) {}
+  beginTrip(id, pin);
+  const late = lateMinutes((state.shuttles[id] || {}).times);
+  recordTrip(id, pin, late).catch(() => {});
+  if (late > 0) toast('Trip started. You are ' + late + ' min behind schedule.');
+  else if (late === 0) toast('Trip started on time. Well done!');
+};
+
+function showTripHeader() {
+  const s = state.shuttles[state.sess.id] || {};
+  $('busNum').textContent = lab(state.sess.id); $('busName').textContent = s.name || 'Bus ' + lab(state.sess.id);
+  $('busSub').textContent = s.plate ? 'Plate ' + s.plate : 'KNUST campus shuttle';
+}
+
+function beginTrip(id, pin) {
+  state.sess = { id, pin }; state.crowd = 0; state.fix = null; state.rejects = 0; drawCrowd();
+  try { localStorage.setItem('kt_session', JSON.stringify({ id, pin, t: Date.now() })); } catch (e) {}
+  $('loginView').classList.add('hidden'); $('tripView').classList.remove('hidden'); $('pinInput').value = '';
+  showTripHeader(); setNet(); watchStats(); drawDash();
+  startWatch(); getWake(); keepAlive.start();
+  clearInterval(state.hb); state.hb = setInterval(heartbeat, 2500);
+}
+async function stopWatch() {
+  if (state.watch !== null) { navigator.geolocation.clearWatch(state.watch); state.watch = null; }
+  if (nativeWatch !== null) { const id = nativeWatch; nativeWatch = null; try { await BG.removeWatcher({ id }); } catch (e) {} }
+}
+async function startWatch() {
+  if (NATIVE) {
+    if (nativeWatch !== null || nativeBusy) return;          // the native watcher keeps running in the background; never start two
+    nativeBusy = true;
+    try {
+      nativeWatch = await BG.addWatcher(
+        { backgroundTitle:'KNUSTrack Driver', backgroundMessage:'Sharing this bus location with students', requestPermissions:true, stale:false, distanceFilter:0 },
+        (loc, err) => {
+          if (err) {
+            if (err.code === 'NOT_AUTHORIZED') { onErr({ code:1 }); if (confirm('KNUSTrack Driver needs Location set to "Always". Open Settings now?')) BG.openSettings(); }
+            else onErr({ code:2 });
+            return;
+          }
+          onPos({ coords:{ latitude:loc.latitude, longitude:loc.longitude, accuracy:loc.accuracy, speed:loc.speed, heading:loc.bearing }, timestamp:loc.time || Date.now() });
+        });
+    } catch (e) { onErr({ code:2 }); }
+    nativeBusy = false;
+    return;
+  }
+  if (state.watch !== null) navigator.geolocation.clearWatch(state.watch);
+  state.watch = navigator.geolocation.watchPosition(onPos, onErr, { enableHighAccuracy:true, maximumAge:0, timeout:30000 });
+}
+const metersBetween = (a, b) => { const R = 6371000, r = Math.PI / 180, dLa = (b.lat - a.lat) * r, dLo = (b.lng - a.lng) * r; const h = Math.sin(dLa / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLo / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); };
+
+function onPos(pos) {
+  const c = pos.coords, now = Date.now();
+  $('speed').textContent = Math.round((c.speed > 0 ? c.speed : 0) * 3.6) + ' km/h';
+  $('acc').textContent = '±' + Math.round(c.accuracy) + ' m';
+  $('acc').className = c.accuracy > MAX_ACC ? 'warn' : 'ok';
+  $('liveText').textContent = 'Sharing your location';
+  const f = state.fix, cur = { lat:c.latitude, lng:c.longitude };
+  if (f) {
+    // 1) Rough fix while we still hold a recent good one: ignore it.
+    if (c.accuracy > MAX_ACC && now - f.at < 20000) return;
+    // 2) A jump faster than a bus can drive (a GPS glitch): ignore it, but accept it if it keeps happening.
+    const dt = Math.max(0.5, (pos.timestamp - f.t) / 1000);
+    if (metersBetween(f, cur) / dt > 40 && c.accuracy > 20 && ++state.rejects < 3) return;
+  }
+  state.rejects = 0;
+  let { lat, lng } = cur, speed = c.speed > 0 ? c.speed : 0;
+  // 3) Standing still: GPS wobbles by a few metres, so keep the dot where it was instead of letting the bus drift.
+  if (f && speed < 1 && metersBetween(f, cur) < Math.max(8, c.accuracy * 0.5)) { lat = f.lat; lng = f.lng; speed = 0; }
+  state.fix = { lat, lng, speed, acc:c.accuracy, heading: typeof c.heading === 'number' && !isNaN(c.heading) && speed > 1 ? c.heading : (f ? f.heading : 0), t:pos.timestamp, at:now };
+  push(false);
+}
+function push(force) {
+  const f = state.fix; if (!state.sess || !f) return;
+  const now = Date.now(); if (!force && now - state.lastSent < SEND_MS) return;
+  state.lastSent = now;
+  updateShuttleLiveLocation(state.sess.id, { pin:state.sess.pin, lat:f.lat, lng:f.lng, speed: now - f.at > 15000 ? 0 : f.speed, heading:f.heading, acc:f.acc, crowd:state.crowd })
+    .then(() => { $('sent').textContent = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', second:'2-digit' }); })
+    .catch(() => toast('Could not send location. Check your internet.'));
+}
+// iPhone only reports a new GPS fix when you move. When the bus is parked we resend the last fix so students still see it as online.
+function heartbeat() {
+  const f = state.fix; if (!state.sess || !f) return;
+  if (Date.now() - f.at > 90000) { $('liveText').textContent = 'Searching for GPS…'; return; }
+  if (Date.now() - state.lastSent >= HEARTBEAT_MS) push(true);
+}
+function onErr(e) { $('liveText').textContent = e.code === 1 ? 'Location blocked' : 'Searching for GPS…'; toast(e.code === 1 ? (NATIVE ? 'Allow location: Settings > KNUSTrack Driver > Location > Always' : 'Allow location: Settings > Privacy > Location Services > Safari Websites > While Using') : 'No GPS signal. Move to an open area.'); }
+
+/* ---------- background keep-alive ----------
+   A web page cannot ask iPhone for "background location". The best a home-screen web app can do is stay alive
+   by playing a silent sound (like a music app), keep the screen awake while open, and restart GPS the moment
+   the app comes back. iOS may still pause it sometimes, so tracking self-heals when the app is reopened. */
+const keepAlive = (() => {
+  let audio = null, on = false;
+  const setUi = (t, ok) => { const b = $('bg'); b.textContent = t; b.className = ok ? 'ok' : 'warn'; b.style.fontSize = '17px'; };
+  function wav() {   // 1 second of silence, built in code so there is no file to host
+    const n = 8000, buf = new ArrayBuffer(44 + n), v = new DataView(buf), w = (o, t) => [...t].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+    w(0, 'RIFF'); v.setUint32(4, 36 + n, true); w(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, 8000, true); v.setUint32(28, 8000, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true); w(36, 'data'); v.setUint32(40, n, true);
+    for (let i = 0; i < n; i++) v.setUint8(44 + i, 128);
+    return URL.createObjectURL(new Blob([buf], { type:'audio/wav' }));
+  }
+  function start() {
+    if (NATIVE) { on = true; setUi('Native app: runs when locked', true); return; }
+    if (!audio) { audio = new Audio(wav()); audio.loop = true; audio.setAttribute('playsinline', ''); audio.volume = 1; }
+    const p = audio.play();
+    const done = (ok) => { on = ok; if ($('bg')) setUi(ok ? 'On: keeps running when locked' : 'Tap anywhere to turn on', ok); };
+    if (p && p.then) p.then(() => done(true)).catch(() => done(false)); else done(true);
+    try {
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({ title:'Sharing bus location', artist:'KNUSTrack Driver' });
+        ['pause', 'stop'].forEach(a => { try { navigator.mediaSession.setActionHandler(a, () => audio.play()); } catch (e) {} });
+      }
+    } catch (e) {}
+  }
+  function stop() { on = false; if (audio) { audio.pause(); audio.currentTime = 0; } try { if ('mediaSession' in navigator) navigator.mediaSession.metadata = null; } catch (e) {} }
+  // After an automatic resume there was no tap, so iOS blocks sound until the driver touches the screen once.
+  document.addEventListener('pointerdown', () => { if (state.sess && !on) start(); }, { passive:true });
+  return { start, stop, resume: () => { if (state.sess && audio && audio.paused) audio.play().catch(() => {}); } };
+})();
+
+/* crowd level: students see this on the bus card */
+function drawCrowd() { document.querySelectorAll('#crowdPick button').forEach(b => { const on = +b.dataset.c === state.crowd; b.style.outline = on ? '2px solid #FFB400' : 'none'; b.style.fontWeight = on ? '800' : '600'; }); }
+$('crowdPick').onclick = (e) => { const b = e.target.closest('button'); if (!b || !state.sess) return; state.crowd = state.crowd === +b.dataset.c ? 0 : +b.dataset.c; drawCrowd(); push(true); toast(state.crowd ? 'Students can now see: ' + b.textContent : 'Crowd level cleared'); };
+
+/* keep screen awake */
+async function getWake() { if (NATIVE) { $('wake').textContent = 'Can turn off'; $('wake').className = 'ok'; return; } try { state.wake = await navigator.wakeLock.request('screen'); $('wake').textContent = 'Staying on'; $('wake').className = 'ok'; } catch (e) { $('wake').textContent = 'Not locked'; $('wake').className = 'warn'; } }
+function comeBack() {
+  if (!state.sess) return;
+  getWake(); keepAlive.resume(); startWatch(); setNet();
+  if (!NATIVE) navigator.geolocation.getCurrentPosition(onPos, () => {}, { enableHighAccuracy:true, maximumAge:0, timeout:10000 });   // fresh fix right away
+  push(true);
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') comeBack(); });
+addEventListener('pageshow', comeBack); addEventListener('focus', comeBack);
+function setNet() { const on = navigator.onLine; $('netChip').textContent = on ? 'Online' : 'Offline'; $('netChip').className = 'chip' + (on ? '' : ' warn'); }
+addEventListener('online', () => { setNet(); push(true); }); addEventListener('offline', setNet);
+
+
+/* ---------- my dashboard ---------- */
+function drawDash() {
+  if (!state.sess) return;
+  const id = state.sess.id, d = state.stats || {}, trips = d.trips || 0, late = d.late || 0;
+  const recent = Array.isArray(d.recent) ? d.recent : Object.values(d.recent || {});
+  const day0 = new Date(); day0.setHours(0, 0, 0, 0);
+  $('kTrips').textContent = trips; $('kLate').textContent = late;
+  $('kLate').className = late ? 'warn' : '';
+  $('kToday').textContent = recent.filter(r => r.m > 0 && r.t >= day0.getTime()).length;
+  $('kOnTime').textContent = trips ? Math.round((trips - late) / trips * 100) + '%' : '-';
+  const rv = Object.values(state.reviews[id] || {}), n = rv.length;
+  $('kRate').textContent = n ? (rv.reduce((a, r) => a + r.rating, 0) / n).toFixed(1) + ' ★' : '-';
+  $('kRev').textContent = n;
+  const t = (state.shuttles[id] || {}).times;
+  $('sched').textContent = t ? 'Scheduled trips: ' + t + ' (a start more than 5 minutes after counts as late)' : 'No schedule set by the transport office yet, so lateness is not tracked.';
+  const rows = Object.values(state.reviews[id] || {}).filter(r => r.comment).sort((a, b) => b.ts - a.ts).slice(0, 8);
+  $('revList').innerHTML = rows.length ? rows.map(r => `<div class="rv"><span class="st">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span><small>${new Date(r.ts).toLocaleDateString([], { day:'numeric', month:'short' })}</small><p>${esc(r.comment)}</p></div>`).join('') : '<p style="color:var(--muted);font-size:13.5px;margin:0">No comments yet.</p>';
+}
+let unStats = null;
+function watchStats() { if (unStats) unStats(); unStats = subscribeToMyStats(state.sess.id, d => { state.stats = d; drawDash(); }); }
+subscribeToReviews(r => { state.reviews = r || {}; drawDash(); });
+
+/* end trip */
+$('endBtn').onclick = async () => {
+  if (!confirm('End this trip? Your bus will disappear from the student map.')) return;
+  await stopWatch();
+  clearInterval(state.hb); keepAlive.stop();
+  if (state.wake) { try { await state.wake.release(); } catch (e) {} }
+  const s = state.sess; state.sess = null;
+  try { localStorage.removeItem('kt_session'); } catch (e) {}
+  try { await removeShuttleLiveLocation(s.id, s.pin); } catch (e) {}
+  $('tripView').classList.add('hidden'); $('loginView').classList.remove('hidden'); toast('Trip ended');
+};
+
+/* resume automatically if the app was closed or iPhone reloaded it (trip stays open for up to 12 hours or until End trip) */
+try {
+  const saved = JSON.parse(localStorage.getItem('kt_session') || 'null');
+  if (saved && saved.id && saved.pin && Date.now() - (saved.t || 0) < SESSION_HOURS * 3600000) {
+    verifyDriverCredentials(saved.id, saved.pin).then(ok => { if (ok) { beginTrip(saved.id, saved.pin); toast('Trip resumed'); } else localStorage.removeItem('kt_session'); });
+  } else localStorage.removeItem('kt_session');
+} catch (e) {}
+</script>
+</body>
+</html>

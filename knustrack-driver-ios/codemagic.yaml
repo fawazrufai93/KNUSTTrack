@@ -1,0 +1,44 @@
+# KNUSTrack Driver: cloud build for iPhone (no Mac needed).
+# Before the first build, change BUNDLE_ID below and make sure the name under
+# "integrations" matches the App Store Connect key name you create in Codemagic.
+workflows:
+  ios-driver:
+    name: KNUSTrack Driver (iOS to TestFlight)
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+    integrations:
+      app_store_connect: KNUSTrack
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.knustrack.driver
+      vars:
+        BUNDLE_ID: "com.knustrack.driver"
+        XCODE_PROJECT: "ios/App/App.xcodeproj"
+        XCODE_SCHEME: "App"
+      node: 22
+      xcode: latest
+    scripts:
+      - name: Install npm packages
+        script: npm install
+      - name: Copy the web page into the app
+        script: npx cap sync ios
+      - name: Set bundle id and build number
+        script: |
+          PBX="$CM_BUILD_DIR/$XCODE_PROJECT/project.pbxproj"
+          sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = [^;]*;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/g" "$PBX"
+          sed -i '' "s/CURRENT_PROJECT_VERSION = [0-9]*;/CURRENT_PROJECT_VERSION = $BUILD_NUMBER;/g" "$PBX"
+      - name: Apply signing files
+        script: xcode-project use-profiles
+      - name: Build the app (.ipa)
+        script: |
+          xcode-project build-ipa \
+            --project "$CM_BUILD_DIR/$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

@@ -1,0 +1,12 @@
+{
+	"appId": "com.knustrack.driver",
+	"appName": "KNUSTrack Driver",
+	"webDir": "www",
+	"ios": {
+		"contentInset": "always",
+		"backgroundColor": "#F4F3EE"
+	},
+	"packageClassList": [
+		"BackgroundGeolocation"
+	]
+}
